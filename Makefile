@@ -17,7 +17,7 @@ run: $(OUT)/$(NAME).exe
 	$(OUT)/$(NAME).exe
 
 undeploy:
-	taskkill /T /IM TouchPortal.exe /FI "STATUS eq RUNNING" >NUL
+	taskkill /F /T /IM TouchPortal.exe /FI "STATUS eq RUNNING" >NUL
 	rmdir /S /Q "$(PLUGIN_OUT)" >NUL
 
 clean:
