@@ -16,7 +16,11 @@ const ACTION_HANDLERS = {
 };
 
 const STATE_FOR_TOPIC = {
-	"ChangeKeyboardLockState": "extra-connectors.keyboard-lock-state.state"
+	ChangeKeyboardLockState: {
+		id: "extra-connectors.keyboard-lock-state.state",
+		default: "false",
+		valueProcessor: value => value !== "true" ? "Locked" : "Unlocked"
+	},
 };
 
 async function init() {
@@ -28,6 +32,12 @@ async function init() {
 	for (const topic of Object.keys(STATE_FOR_TOPIC))
 		sub.subscribe(topic);
 
+	// set initial state from default values
+	for (const { id, default: defaultValue, valueProcessor } of Object.values(STATE_FOR_TOPIC)) {
+		const value = valueProcessor ? valueProcessor(defaultValue) : defaultValue;
+		TPClient.stateUpdate(id, value);
+	}
+
 	// wait for messages and log them
 	for await (const [topicBuf, msgBuf] of sub) {
 		// convert topic and msg to string
@@ -38,14 +48,16 @@ async function init() {
 		TPClient.logIt("INFO", "Message", topic, msg);
 
 		// find state id for topic
-		const stateID = STATE_FOR_TOPIC[topic];
-		if (!stateID) {
+		const stateInfo = STATE_FOR_TOPIC[topic];
+		if (!stateInfo) {
 			TPClient.logIt("WARN", "Unknown Topic", topic);
 			continue;
 		}
 
+		const finalValue = stateInfo.valueProcessor ? stateInfo.valueProcessor(msg) : msg;
+
 		// update state
-		TPClient.stateUpdate(stateID, msg);
+		TPClient.stateUpdate(stateInfo.id, finalValue);
 	}
 
 	// log done
@@ -56,7 +68,7 @@ TPClient.on("Action", async (data) => {
 	const { actionId } = data;
 	const handler = ACTION_HANDLERS[actionId];
 	if (handler)
-		handler(data);
+		handler(data.data);
 	else
 		TPClient.logIt("WARN", "Unknown Action", actionId);
 });

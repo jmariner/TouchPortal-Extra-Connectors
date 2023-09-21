@@ -49,7 +49,7 @@
 						"Locked",
 						"Unlocked"
 					],
-					"valueStateId": "extra-connectors.keyboard-lock-state.stated"
+					"valueStateId": "extra-connectors.keyboard-lock-state.state"
 				}
 			],
 			"states": [
