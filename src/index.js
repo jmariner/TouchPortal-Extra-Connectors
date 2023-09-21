@@ -22,7 +22,7 @@ const STATE_FOR_TOPIC = {
 async function init() {
 	// create sub socket on port 5555
 	const sub = new zeromq.Subscriber();
-	sub.bind("tcp://localhost:5555");
+	await sub.bind("tcp://*:5555");
 
 	// subscribe to all topics in STATE_FOR_TOPIC
 	for (const topic of Object.keys(STATE_FOR_TOPIC))
