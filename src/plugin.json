@@ -17,7 +17,7 @@
 				{
 					"id": "extra-connectors.keyboard-lock-state.action",
 					"prefix": "Extras",
-					"name": "Set Lock State",
+					"name": "Set Keyboard Lock State",
 					"type": "communicate",
 					"format": "{$extra-connectors.keyboard-lock-state.action-value$} Keyboard Lock",
 					"tryInline": true,
