@@ -3,6 +3,8 @@ const zeromq = require("zeromq");
 const pluginInfo = require("./plugin.json");
 
 const TPClient = new TouchPortalAPI.Client();
+/** @type {zeromq.Request} */
+let outSocket;
 
 const ACTION_HANDLERS = {
 	"extra-connectors.keyboard-lock-state.action": data => {
@@ -10,55 +12,62 @@ const ACTION_HANDLERS = {
 		const { value } = data.find(x => x.id === "extra-connectors.keyboard-lock-state.action-value") || {};
 		TPClient.logIt("INFO", "Change Keyboard Lock", value);
 
-		// if (pub)
-		// 	await pub.send(["ChangeLocked", value]);
+		if (outSocket)
+			outSocket.send(["ChangeKeyboardLockState", value])
 	}
 };
 
 const STATE_FOR_TOPIC = {
 	ChangeKeyboardLockState: {
 		id: "extra-connectors.keyboard-lock-state.state",
-		default: "false",
-		valueProcessor: value => value !== "true" ? "Locked" : "Unlocked"
+		valueProcessor: value => value === "true" ? "Locked" : "Unlocked"
 	},
 };
 
 async function init() {
-	// create sub socket on port 5555
-	const sub = new zeromq.Subscriber();
-	await sub.bind("tcp://*:5555");
+	// create input socket on port 5555
+	const inSocket = new zeromq.Reply();
+	await inSocket.bind("tcp://*:5555");
 
-	// subscribe to all topics in STATE_FOR_TOPIC
-	for (const topic of Object.keys(STATE_FOR_TOPIC))
-		sub.subscribe(topic);
+	outSocket = new zeromq.Request();
+	outSocket.connect("tcp://localhost:5556");
 
-	// set initial state from default values
-	for (const { id, default: defaultValue, valueProcessor } of Object.values(STATE_FOR_TOPIC)) {
-		const value = valueProcessor ? valueProcessor(defaultValue) : defaultValue;
-		TPClient.stateUpdate(id, value);
-	}
+	const subHandler = async () => {
+		// wait for messages and log them
+		for await (const [topicBuf, msgBuf] of inSocket) {
+			// convert topic and msg to string
+			const topic = topicBuf.toString();
+			const msg = msgBuf.toString();
 
-	// wait for messages and log them
-	for await (const [topicBuf, msgBuf] of sub) {
-		// convert topic and msg to string
-		const topic = topicBuf.toString();
-		const msg = msgBuf.toString();
+			// log topic and msg
+			TPClient.logIt("INFO", "Message", topic, msg);
 
-		// log topic and msg
-		TPClient.logIt("INFO", "Message", topic, msg);
+			// find state id for topic
+			const stateInfo = STATE_FOR_TOPIC[topic];
+			if (!stateInfo) {
+				TPClient.logIt("WARN", "Unknown Topic", topic);
+				inSocket.send("ERROR");
+				continue;
+			}
 
-		// find state id for topic
-		const stateInfo = STATE_FOR_TOPIC[topic];
-		if (!stateInfo) {
-			TPClient.logIt("WARN", "Unknown Topic", topic);
-			continue;
+			const finalValue = stateInfo.valueProcessor ? stateInfo.valueProcessor(msg) : msg;
+
+			// update state
+			TPClient.stateUpdate(stateInfo.id, finalValue);
+
+			// send reply
+			inSocket.send("OK");
 		}
+	};
 
-		const finalValue = stateInfo.valueProcessor ? stateInfo.valueProcessor(msg) : msg;
+	const reqHandler = async () => {
+		for await (const [msg] of outSocket) {
+			TPClient.logIt("INFO", "Reply:", msg.toString());
+		}
+	};
 
-		// update state
-		TPClient.stateUpdate(stateInfo.id, finalValue);
-	}
+	subHandler().catch(err => TPClient.logIt("ERROR", "SUB ERROR", err));
+	reqHandler().catch(err => TPClient.logIt("ERROR", "REQ ERROR", err));
 
 	// log done
 	TPClient.logIt("INFO", "Keyboard Locker", "DONE");
