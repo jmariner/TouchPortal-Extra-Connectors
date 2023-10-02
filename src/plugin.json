@@ -50,6 +50,16 @@
 						"Unlocked"
 					],
 					"valueStateId": "extra-connectors.keyboard-lock-state.state"
+				},
+				{
+					"id": "extra-connectors.current-time.event",
+					"name": "Current Time Changed",
+					"format": "Current Time Changed",
+					"type": "communicate",
+					"valueType": "choice",
+					"default": "",
+					"valueChoices": [],
+					"valueStateId": "extra-connectors.current-time.state"
 				}
 			],
 			"states": [
@@ -62,6 +72,12 @@
 						"Locked",
 						"Unlocked"
 					]
+				},
+				{
+					"id": "extra-connectors.current-time.state",
+					"type": "text",
+					"desc": "Current Time",
+					"default": ""
 				}
 			]
 		}

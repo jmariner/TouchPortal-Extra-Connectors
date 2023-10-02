@@ -1,10 +1,13 @@
 const TouchPortalAPI = require("touchportal-api");
 const zeromq = require("zeromq");
+const cron = require("node-cron");
 const pluginInfo = require("./plugin.json");
 
 const TPClient = new TouchPortalAPI.Client();
 /** @type {zeromq.Request} */
 let outSocket;
+/** @type {cron.ScheduledTask} */
+let cronTask;
 
 const ACTION_HANDLERS = {
 	"extra-connectors.keyboard-lock-state.action": data => {
@@ -66,11 +69,23 @@ async function init() {
 		}
 	};
 
+	if (cronTask)
+		cronTask.stop();
+
+	// start cron task that runs every minute
+	cronTask = cron.schedule("* * * * *", () => {
+		TPClient.stateUpdate(
+			"extra-connectors.current-time.state",
+			// using hourCycle=h23 instead of hour12=false due to a bug (https://stackoverflow.com/a/68646518/8161100)
+			new Date().toLocaleTimeString("en-US", { hourCycle: "h23", hour: "numeric", minute: "numeric" })
+		);
+	}, { runOnInit: true });
+
 	subHandler().catch(err => TPClient.logIt("ERROR", "SUB ERROR", err));
 	reqHandler().catch(err => TPClient.logIt("ERROR", "REQ ERROR", err));
 
 	// log done
-	TPClient.logIt("INFO", "Keyboard Locker", "DONE");
+	TPClient.logIt("INFO", "Keyboard Locker", "Initialization Complete");
 }
 
 TPClient.on("Action", async (data) => {
