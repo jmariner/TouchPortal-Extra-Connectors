@@ -37,31 +37,7 @@
 					]
 				}
 			],
-			"events": [
-				{
-					"id": "extra-connectors.keyboard-lock-state.event",
-					"name": "Keyboard Lock State Changed",
-					"format": "When Keyboard $val",
-					"type": "communicate",
-					"valueType": "choice",
-					"default": "",
-					"valueChoices": [
-						"Locked",
-						"Unlocked"
-					],
-					"valueStateId": "extra-connectors.keyboard-lock-state.state"
-				},
-				{
-					"id": "extra-connectors.current-time.event",
-					"name": "Current Time Changed",
-					"format": "Current Time Changed",
-					"type": "communicate",
-					"valueType": "choice",
-					"default": "",
-					"valueChoices": [],
-					"valueStateId": "extra-connectors.current-time.state"
-				}
-			],
+			"events": [],
 			"states": [
 				{
 					"id": "extra-connectors.keyboard-lock-state.state",
@@ -77,6 +53,12 @@
 					"id": "extra-connectors.current-time.state",
 					"type": "text",
 					"desc": "Current Time",
+					"default": ""
+				},
+				{
+					"id": "extra-connectors.battery-monitor.state-image",
+					"type": "text",
+					"desc": "Battery Monitor Image",
 					"default": ""
 				}
 			]

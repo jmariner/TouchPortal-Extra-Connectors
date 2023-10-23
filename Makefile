@@ -5,7 +5,7 @@ PLUGIN_OUT=%APPDATA%\TouchPortal\plugins\$(NAME)
 
 plugin: $(OUT)/$(NAME).exe
 
-$(OUT)/$(NAME).exe: $(SRC)/index.js $(SRC)\plugin.json package.json
+$(OUT)/$(NAME).exe: $(SRC)/*.js $(SRC)\plugin.json package.json
 	yarn run pkg --compress GZip $(SRC)/index.js -c package.json -t node18-windows-x64 -o $(OUT)/$(NAME).exe
 	xcopy node_modules\zeromq\prebuilds $(OUT)\prebuilds /Q /E /Y /I >NUL
 	copy $(SRC)\plugin.json $(OUT)\entry.tp >NUL
